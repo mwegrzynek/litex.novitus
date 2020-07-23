@@ -5,12 +5,19 @@ import pytest
 from litex.novitus.exceptions import CommunicationError, ProtocolError
    
 
-# def test_dle(printer):
-#     assert printer.dle()['online'] in ('yes', 'no')
-
+def test_dle(printer):
+    assert printer.dle()['online'] in ('yes', 'no')
 
 def test_enq(printer):
     assert printer.enq()['fiscal'] in ('yes', 'no')
+
+
+def test_bel(printer):
+    assert printer.bel() is None
+
+
+def test_can(printer):
+    assert printer.can() is None
 
 
 # def test_get_error(printer):
