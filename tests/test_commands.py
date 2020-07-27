@@ -230,8 +230,8 @@ def test_cash_register_data(printer):
 #     )
 
 
-# def test_open_drawer(printer):
-#     printer.open_drawer()
+def test_open_drawer(printer):
+    printer.open_drawer()
 
 
 # def test_info_checkout(printer):
@@ -242,8 +242,8 @@ def test_cash_register_data(printer):
 #     assert res.ptu.text
 
 
-# def test_taxrates_get(printer):
-#     res = printer.taxrates_get()
-#     assert res[0] == ('A', '23.00%')
-#     assert res[1] == ('B', '8.00%')
-#     assert res[4] == ('E', 'free')
+def test_taxrates_get(printer):
+    res = printer.taxrates_get()
+    assert res[0] == ('A', '23.00%')
+    assert res[1] == ('B', '8.00%')
+    assert res[4] == ('E', 'free')

@@ -9,7 +9,7 @@ import enum
 import serial
 
 
-from .helpers import assemble_packet, unpack_flags, yn, parse_cash_register_data_reply
+from .helpers import assemble_packet, unpack_flags, yn, parse_cash_register_data_reply, parse_ptu_percentages
 from .exceptions import CommunicationError, ProtocolError
 
 
@@ -125,6 +125,17 @@ class Printer:
 
         return parse_cash_register_data_reply(reply)
 
+    def taxrates_get(self):
+
+        reply = self.cash_register_data(mode=22)
+
+        tax_rates = [
+            (key[-1], parse_ptu_percentages(val, self.encoding))
+            for key, val in reply.items() if key.startswith('PTU_')
+        ]
+
+        return tax_rates
+
     # def invoice_begin(self, **kwargs):
 
     #     defined_args = dict(
@@ -206,48 +217,48 @@ class Printer:
     #     )
     #     self.send_command(cmd, check_for_errors=True)
 
-    # def item(
-    #     self,
-    #     name,
-    #     quantity,
-    #     quantityunit,
-    #     ptu,
-    #     price,
-    #     plu='',
-    #     action='sale',
-    #     recipe='',
-    #     charge='',
-    #     description='',
-    #     discount_name='',
-    #     discount_value=None,
-    #     discount_descid=0
-    # ):
-    #     if discount_value is not None:
-    #         dsc = E.discount(
-    #             '',
-    #             action='discount',
-    #             name=discount_name,
-    #             value=discount_value,
-    #             descid=str(discount_descid)
-    #         )
-    #     else:
-    #         dsc = ''
+    def item(
+        self,
+        name,
+        quantity,
+        quantityunit,
+        ptu,
+        price,
+        plu='',
+        action='sale',
+        recipe='',
+        charge='',
+        description='',
+        discount_name='',
+        discount_value=None,
+        discount_descid=0
+    ):
+        if discount_value is not None:
+            dsc = E.discount(
+                '',
+                action='discount',
+                name=discount_name,
+                value=discount_value,
+                descid=str(discount_descid)
+            )
+        else:
+            dsc = ''
 
-    #     cmd = E.item(
-    #         dsc,
-    #         name=name,
-    #         quantity=str(quantity),
-    #         quantityunit=quantityunit,
-    #         ptu=ptu,
-    #         price=str(price),
-    #         plu=plu,
-    #         action=action,
-    #         recipe=recipe,
-    #         charge=charge,
-    #         description=description
-    #     )
+        cmd = E.item(
+            dsc,
+            name=name,
+            quantity=str(quantity),
+            quantityunit=quantityunit,
+            ptu=ptu,
+            price=str(price),
+            plu=plu,
+            action=action,
+            recipe=recipe,
+            charge=charge,
+            description=description
+        )
 
-    #     self.send_command(cmd, check_for_errors=True)
+        self.send_command(cmd, check_for_errors=True)
 
     # def discount(
     #     self,
@@ -301,19 +312,16 @@ class Printer:
 
     #     self.send_command(cmd, check_for_errors=True)
 
-    # def receipt_begin(
-    #     self,
-    #     mode='online',
-    #     pharmaceutical='no'
-    # ):
-    #     cmd = E.receipt(
-    #         '',
-    #         action='begin',
-    #         mode=mode,
-    #         pharmaceutical=pharmaceutical
-    #     )
-
-    #     self.send_command(cmd, check_for_errors=True)
+    def receipt_begin(
+        self,
+        mode='online',
+        pharmaceutical='no'
+    ):
+        self.send_command(
+            command=b'$h',
+            parameters=(b'0',),
+            check_for_errors=True
+        )
 
     # def receipt_cancel(self):
     #     cmd = E.receipt('', action='cancel')
@@ -345,14 +353,11 @@ class Printer:
 
     #     self.send_command(cmd, check_for_errors=True)
 
-    # def open_drawer(self):
-
-    #     cmd = E.control(
-    #         '',
-    #         action='drawer'
-    #     )
-
-    #     self.send_command(cmd, check_for_errors=True)
+    def open_drawer(self):
+        self.send_command(
+            command=b'$d',
+            parameters=(b'1',)
+        )
 
     # def info_checkout(self, type_='receipt'):
 
@@ -368,25 +373,6 @@ class Printer:
     #         cmd,
     #         read_reply=True,
     #     ).info
-
-    # def taxrates_get(self):
-
-    #     cmd = E.taxrates(
-    #         '',
-    #         action='get'
-    #     )
-
-    #     res = self.send_command(
-    #         cmd,
-    #         read_reply=True,
-    #     )
-
-    #     tax_rates = [
-    #         (ptu.get('name'), ptu.text) for ptu in res.taxrates.ptu
-    #     ]
-
-    #     return tax_rates
-
 
 
 

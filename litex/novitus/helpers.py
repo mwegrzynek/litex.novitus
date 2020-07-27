@@ -64,4 +64,13 @@ def parse_cash_register_data_reply(pkt):
     return reply
 
 
+def parse_ptu_percentages(val, encoding='cp1250'):
+    ret = val.lstrip(b'0').decode(encoding) + '%'
+
+    if ret == '100.00%':
+        ret = 'free'
+    elif ret == '101.00%':
+        ret = 'unused'
+
+    return ret
 
