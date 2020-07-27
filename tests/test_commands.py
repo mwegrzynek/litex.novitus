@@ -3,7 +3,7 @@ import pytest
 
 
 from litex.novitus.exceptions import CommunicationError, ProtocolError
-   
+
 
 def test_dle(printer):
     assert printer.dle()['online'] in ('yes', 'no')
@@ -20,12 +20,21 @@ def test_can(printer):
     assert printer.can() is None
 
 
-# def test_get_error(printer):
-#     assert printer.get_error() == 0
+def test_set_error(printer):
+    assert printer.set_error('silent') is None
 
 
-# def test_invoice_begin_cancel(printer):    
-    
+def test_get_error(printer):
+    assert printer.get_error() == 0
+
+
+def test_cash_register_data(printer):
+    res = printer.cash_register_data(mode=22)
+    assert 'serialno' in res
+
+
+# def test_invoice_begin_cancel(printer):
+
 #     printer.invoice_begin(
 #         invoice_type='invoice',
 #         number='1/TEST/2020',
@@ -35,29 +44,29 @@ def test_can(printer):
 #     printer.invoice_cancel()
 
 
-# def test_invoice_cancel_with_no_active_invoice(printer):    
+# def test_invoice_cancel_with_no_active_invoice(printer):
 #     # Works even without open transaction
 #     printer.invoice_cancel()
 
 
-# def test_double_invoice_begin(printer):        
+# def test_double_invoice_begin(printer):
 #     printer.invoice_begin(invoice_type='invoice')
-    
+
 #     with pytest.raises(ProtocolError):
 #         printer.invoice_begin(invoice_type='invoice')
 
 #     printer.invoice_cancel()
-    
+
 
 # @pytest.mark.paper
-# def test_single_position_invoice(printer):        
+# def test_single_position_invoice(printer):
 #     printer.invoice_begin(invoice_type='invoice', copies=-1)
 #     printer.item(
 #         name='Test ąśćłóśź',
 #         quantity=10,
 #         quantityunit='pcs',
 #         ptu='A',
-#         price=10        
+#         price=10
 #     )
 #     printer.invoice_close(
 #         100,
@@ -66,11 +75,11 @@ def test_can(printer):
 #         'John Doe',
 #         'Jane Doe'
 #     )
-    
+
 # @pytest.mark.paper
 # def test_multiple_position_invoice_with_discount(printer):
 #     printer.invoice_begin(
-#         invoice_type='invoice', 
+#         invoice_type='invoice',
 #         copies=-1,
 #         description='original',
 #         customer='Litex Service Sp. z o.o.',
@@ -85,7 +94,7 @@ def test_can(printer):
 #         quantity=10,
 #         quantityunit='pcs',
 #         ptu='A',
-#         price=10        
+#         price=10
 #     )
 #     printer.item(
 #         name='Test zażółć gęślą jaźń',
@@ -93,7 +102,11 @@ def test_can(printer):
 #         quantityunit='pcs',
 #         description='A long description',
 #         ptu='A',
-#         price=5        
+#         price=5def test_taxrates_get(printer):
+#     res = printer.taxrates_get()
+#     assert res[0] == ('A', '23.00%')
+#     assert res[1] == ('B', '8.00%')
+#     assert res[4] == ('E', 'free')
 #     )
 #     printer.discount(
 #         value='10%',
@@ -117,7 +130,7 @@ def test_can(printer):
 #         quantity=2,
 #         quantityunit='pcs',
 #         ptu='A',
-#         price=4        
+#         price=4
 #     )
 #     printer.item(
 #         name='Test zażółć gęślą jaźń 2',
@@ -125,7 +138,7 @@ def test_can(printer):
 #         quantityunit='pcs',
 #         description='A long description',
 #         ptu='A',
-#         price=2        
+#         price=2
 #     )
 #     printer.discount(
 #         value='20%',
@@ -159,7 +172,7 @@ def test_can(printer):
 #         quantityunit='pcs',
 #         description='A long description',
 #         ptu='A',
-#         price=2        
+#         price=2
 #     )
 #     printer.discount(
 #         value='20%',
@@ -193,7 +206,7 @@ def test_can(printer):
 #         quantityunit='pcs',
 #         description='A long description',
 #         ptu='A',
-#         price=2        
+#         price=2
 #     )
 #     printer.discount(
 #         value='20%',
@@ -202,11 +215,11 @@ def test_can(printer):
 #     )
 #     printer.payment_add(
 #         'card',
-#         value=11.0        
+#         value=11.0
 #     )
 #     printer.payment_add(
 #         'cash',
-#         value=1.16        
+#         value=1.16
 #     )
 #     printer.receipt_close(
 #         12.16,
@@ -232,5 +245,5 @@ def test_can(printer):
 # def test_taxrates_get(printer):
 #     res = printer.taxrates_get()
 #     assert res[0] == ('A', '23.00%')
-#     assert res[1] == ('B', '8.00%')    
-#     assert res[4] == ('E', 'free')    
+#     assert res[1] == ('B', '8.00%')
+#     assert res[4] == ('E', 'free')

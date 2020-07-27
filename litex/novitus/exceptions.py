@@ -137,6 +137,10 @@ class CommunicationError(NovitusError):
     pass
 
 
+class ReplyNotImplemented(NovitusError):
+    pass
+
+
 class ProtocolError(NovitusError):
     def __init__(self, error_code):
         msg = error_codes.get(error_code, 'unknown error code')
@@ -146,7 +150,7 @@ class ProtocolError(NovitusError):
             msg
         )
         self.error_code = error_code
-        self.msg = msg        
+        self.msg = msg
 
     def __repr__(self):
         return self.args[0]

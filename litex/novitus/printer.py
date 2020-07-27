@@ -3,17 +3,24 @@ Novitus Protocol implementation
 '''
 import logging
 import time
+import enum
 
 
 import serial
 
 
-from .helpers import assemble_packet, unpack_flags, yn
+from .helpers import assemble_packet, unpack_flags, yn, parse_cash_register_data_reply
 from .exceptions import CommunicationError, ProtocolError
 
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
+
+
+ERROR_HANDLING = {
+    'display': b'0',
+    'silent': b'1'
+}
 
 
 class Printer:
@@ -30,7 +37,7 @@ class Printer:
         if self._conn is None:
             self._conn = serial.serial_for_url(self.url)
             self._conn.timeout = self.timeout
-        
+
         return self._conn
 
     def close(self):
@@ -38,42 +45,44 @@ class Printer:
             self._conn.close()
             self._conn = None
 
-    # def send_command(self, command, read_reply=False, check_for_errors=False):
-    #     pkt = etree_to_bytes(
-    #         assemble_packet(command, self.crc),
-    #         self.encoding
-    #     )
+    def send_command(
+        self,
+        command,
+        parameters=tuple(),
+        texts=tuple(),
+        read_reply=False,
+        check_for_errors=False
+    ):
+        pkt = assemble_packet(command, parameters, texts, self.encoding)
 
-    #     log.debug('Sending command: %s', pkt.decode(self.encoding))
-    #     self.conn.write(pkt)
+        log.debug('Sending command: %s', pkt)
+        self.conn.write(pkt)
 
-    #     if read_reply:
-    #         reply = self.conn.read_until(b'</packet>', 5000)
+        if read_reply:
+            reply = self.conn.read_until(b'\x1b\\', 5000)
 
-    #         if not reply:
-    #             raise CommunicationError('No reply from printer')
+            if not reply:
+                raise CommunicationError('No reply from printer')
 
-    #         log.debug('Received reply: %s', reply.decode(self.encoding))
+            log.debug('Received reply: %s', reply)
+        else:
+            reply = None
 
-    #         reply = bytes_to_etree(reply)
-    #     else:
-    #         reply = None
+        if check_for_errors:
+            time.sleep(0.1)
+            if self.enq()['lastcommanderror'] == 'yes':
+                err = self.get_error()
+                raise ProtocolError(err)
 
-    #     if check_for_errors:
-    #         time.sleep(0.1)
-    #         if self.enq()['lastcommanderror'] == 'yes':
-    #             err = self.get_error()
-    #             raise ProtocolError(err)
-
-    #     return reply
+        return reply
 
     def dle(self):
         self.conn.write(bytes([0x10]))
         status = unpack_flags(self.conn.read())[:3]
         return {
-            'online': yn(status[2]),            
+            'online': yn(status[2]),
             'papererror': yn(status[1]),
-            'printererror': yn(status[0])            
+            'printererror': yn(status[0])
         }
 
     def enq(self):
@@ -91,24 +100,30 @@ class Printer:
 
     def can(self):
         self.conn.write(bytes([0x18]))
-        
-    # def set_error(self, value):
-    #     cmd = E.error(
-    #         '',
-    #         action='set',
-    #         value=value
-    #     )
 
-    #     self.send_command(cmd)
+    def set_error(self, value):
 
-    # def get_error(self):
-    #     cmd = E.error(
-    #         '',
-    #         action='get',
-    #         value=''
-    #     )
+        self.send_command(
+            command=b'#e',
+            parameters=(ERROR_HANDLING[value],)
+        )
 
-    #     return int(self.send_command(cmd, True).error.get('value'))
+    def get_error(self):
+        reply = self.send_command(
+            command=b'#n',
+            read_reply=True
+        )[5:-2]
+
+        return int(reply)
+
+    def cash_register_data(self, mode=21):
+        reply = self.send_command(
+            command=b'#s',
+            parameters=(str(mode).encode(self.encoding),),
+            read_reply=True
+        )[2:-2]
+
+        return parse_cash_register_data_reply(reply)
 
     # def invoice_begin(self, **kwargs):
 
@@ -152,7 +167,7 @@ class Printer:
     #     for name, value in kwargs.items():
     #         if name not in defined_args:
     #             raise TypeError('Unknown argument: {}'.format(name))
-            
+
     #         allowed_values = defined_args.get(name)
     #         if allowed_values is not None and value not in allowed_values:
     #             raise TypeError(
@@ -179,9 +194,9 @@ class Printer:
     #     checkout,
     #     cashier,
     #     buyer
-    # ):        
+    # ):
     #     cmd = E.invoice(
-    #         '', 
+    #         '',
     #         action='close',
     #         total=str(total),
     #         systemno=systemno,
@@ -192,7 +207,7 @@ class Printer:
     #     self.send_command(cmd, check_for_errors=True)
 
     # def item(
-    #     self, 
+    #     self,
     #     name,
     #     quantity,
     #     quantityunit,
@@ -219,8 +234,8 @@ class Printer:
     #         dsc = ''
 
     #     cmd = E.item(
-    #         dsc, 
-    #         name=name, 
+    #         dsc,
+    #         name=name,
     #         quantity=str(quantity),
     #         quantityunit=quantityunit,
     #         ptu=ptu,
@@ -235,13 +250,13 @@ class Printer:
     #     self.send_command(cmd, check_for_errors=True)
 
     # def discount(
-    #     self, 
+    #     self,
     #     value,
     #     name,
     #     descid
     # ):
     #     cmd = E.discount(
-    #         '', 
+    #         '',
     #         value=value,
     #         name=name,
     #         descid=str(descid),
@@ -249,15 +264,15 @@ class Printer:
     #     )
 
     #     self.send_command(cmd, check_for_errors=True)
-        
+
     # def markup(
-    #     self, 
+    #     self,
     #     value,
     #     name,
     #     descid
     # ):
     #     cmd = E.discount(
-    #         '', 
+    #         '',
     #         value=value,
     #         name=name,
     #         descid=str(descid),
@@ -287,9 +302,9 @@ class Printer:
     #     self.send_command(cmd, check_for_errors=True)
 
     # def receipt_begin(
-    #     self, 
+    #     self,
     #     mode='online',
-    #     pharmaceutical='no'        
+    #     pharmaceutical='no'
     # ):
     #     cmd = E.receipt(
     #         '',
@@ -300,21 +315,21 @@ class Printer:
 
     #     self.send_command(cmd, check_for_errors=True)
 
-    # def receipt_cancel(self):        
+    # def receipt_cancel(self):
     #     cmd = E.receipt('', action='cancel')
     #     self.send_command(cmd, check_for_errors=True)
 
     # def receipt_close(
-    #     self,   
-    #     total,     
+    #     self,
+    #     total,
     #     systemno,
     #     checkout,
-    #     cashier,        
+    #     cashier,
     #     charge=None,
     #     nip=None
-    # ):        
+    # ):
     #     cmd = E.receipt(
-    #         '', 
+    #         '',
     #         action='close',
     #         total=str(total),
     #         systemno=systemno,
@@ -350,8 +365,8 @@ class Printer:
     #     )
 
     #     return self.send_command(
-    #         cmd, 
-    #         read_reply=True, 
+    #         cmd,
+    #         read_reply=True,
     #     ).info
 
     # def taxrates_get(self):
@@ -362,8 +377,8 @@ class Printer:
     #     )
 
     #     res = self.send_command(
-    #         cmd, 
-    #         read_reply=True, 
+    #         cmd,
+    #         read_reply=True,
     #     )
 
     #     tax_rates = [
@@ -371,7 +386,7 @@ class Printer:
     #     ]
 
     #     return tax_rates
-        
 
-    
+
+
 
