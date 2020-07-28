@@ -11,7 +11,7 @@ def yn(val: bool) -> str:
 
 def nmb(val: float) -> str:
     '''Protocol compatible number format'''
-    return '{:.2f}/'.format(val)
+    return '{:.2f}'.format(val)
 
 
 def checksum(txt: str) -> str:

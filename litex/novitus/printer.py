@@ -9,7 +9,7 @@ import enum
 import serial
 
 
-from .helpers import assemble_packet, unpack_flags, yn, parse_cash_register_data_reply, parse_ptu_percentages
+from .helpers import assemble_packet, unpack_flags, yn, parse_cash_register_data_reply, parse_ptu_percentages, nmb
 from .exceptions import CommunicationError, ProtocolError
 
 
@@ -45,6 +45,12 @@ class Printer:
             self._conn.close()
             self._conn = None
 
+    def _ps(self, val, sep=''):
+        '''
+        Converts val to printer compatible string
+        '''
+        return (str(val) + sep).encode(self.encoding) 
+
     def send_command(
         self,
         command,
@@ -70,8 +76,9 @@ class Printer:
 
         if check_for_errors:
             time.sleep(0.1)
-            if self.enq()['lastcommanderror'] == 'yes':
-                err = self.get_error()
+            #if self.enq()['lastcommanderror'] == 'yes':
+            err = self.get_error()
+            if err != 0:
                 raise ProtocolError(err)
 
         return reply
@@ -119,7 +126,7 @@ class Printer:
     def cash_register_data(self, mode=21):
         reply = self.send_command(
             command=b'#s',
-            parameters=(str(mode).encode(self.encoding),),
+            parameters=(self._ps(mode),),
             read_reply=True
         )[2:-2]
 
@@ -219,46 +226,53 @@ class Printer:
 
     def item(
         self,
+        lineno,    
         name,
-        quantity,
-        quantityunit,
+        quantity,        
         ptu,
         price,
-        plu='',
-        action='sale',
-        recipe='',
-        charge='',
+        plu='',        
         description='',
         discount_name='',
         discount_value=None,
-        discount_descid=0
+        discount_descid=16
     ):
+        params = [self._ps(lineno)]
+        texts = [name + '\r']
+
+        if plu:
+            texts.append(plu + '\r')
+
+        texts.extend([
+            nmb(quantity) + '\r',
+            ptu + '/',
+            nmb(price) + '/',
+            nmb(price * quantity) + '/',
+        ])
+
         if discount_value is not None:
-            dsc = E.discount(
-                '',
-                action='discount',
-                name=discount_name,
-                value=discount_value,
-                descid=str(discount_descid)
-            )
-        else:
-            dsc = ''
+            params.extend([
+                b'2', b';', self._ps(discount_descid)
+            ])
 
-        cmd = E.item(
-            dsc,
-            name=name,
-            quantity=str(quantity),
-            quantityunit=quantityunit,
-            ptu=ptu,
-            price=str(price),
-            plu=plu,
-            action=action,
-            recipe=recipe,
-            charge=charge,
-            description=description
+            texts.append([
+                discount_value.strip('%') + '\r',
+                discount_name + '\r'
+            ])
+
+        if description:
+            params.extend([
+                b'1;'
+            ])
+
+            texts.append(description + '\r')            
+        
+        self.send_command(
+            command=b'$l',
+            parameters=params,
+            texts=texts,
+            check_for_errors=True
         )
-
-        self.send_command(cmd, check_for_errors=True)
 
     # def discount(
     #     self,
@@ -323,35 +337,28 @@ class Printer:
             check_for_errors=True
         )
 
-    # def receipt_cancel(self):
-    #     cmd = E.receipt('', action='cancel')
-    #     self.send_command(cmd, check_for_errors=True)
+    def receipt_cancel(self):    
+        self.send_command(
+            command=b'$e',
+            parameters=[b'0'],
+            check_for_errors=True
+        )
 
-    # def receipt_close(
-    #     self,
-    #     total,
-    #     systemno,
-    #     checkout,
-    #     cashier,
-    #     charge=None,
-    #     nip=None
-    # ):
-    #     cmd = E.receipt(
-    #         '',
-    #         action='close',
-    #         total=str(total),
-    #         systemno=systemno,
-    #         checkout=checkout,
-    #         cashier=cashier
-    #     )
-
-    #     if charge is not None:
-    #         cmd.set('charge', str(charge))
-
-    #     if nip is not None:
-    #         cmd.set('nip', nip)
-
-    #     self.send_command(cmd, check_for_errors=True)
+    def receipt_close(
+        self,
+        total,        
+        cashier
+    ):        
+        self.send_command(
+            command=b'$e',
+            parameters=[b'1;0'],
+            texts=[
+                cashier + '\r',
+                nmb(total) + '/',
+                nmb(total) + '/',
+            ],
+            check_for_errors=True
+        )
 
     def open_drawer(self):
         self.send_command(
