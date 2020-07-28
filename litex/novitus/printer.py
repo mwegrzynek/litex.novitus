@@ -25,6 +25,13 @@ ERROR_HANDLING = {
 }
 
 
+BUYER_IDENTIFIER = {
+    'NIP': '1',
+    'REGON': '2',
+    'PESEL': '3'
+}
+
+
 class Printer:
 
     def __init__(self, url, timeout=10, encoding='cp1250'):
@@ -272,37 +279,43 @@ class Printer:
             check_for_errors=True
         )
 
-    # def discount(
-    #     self,
-    #     value,
-    #     name,
-    #     descid
-    # ):
-    #     cmd = E.discount(
-    #         '',
-    #         value=value,
-    #         name=name,
-    #         descid=str(descid),
-    #         action='discount'
-    #     )
+    def discount(
+        self,
+        value,
+        name
+    ):
+        discount_type = '1' if value.endswith('%') else '3'
 
-    #     self.send_command(cmd, check_for_errors=True)
+        self.send_command(
+            command='$n',
+            parameters=[discount_type],
+            texts=[
+                name,
+                '\r',
+                value.strip('%'),
+                '/'
+            ],
+            check_for_errors=True
+        )
 
-    # def markup(
-    #     self,
-    #     value,
-    #     name,
-    #     descid
-    # ):
-    #     cmd = E.discount(
-    #         '',
-    #         value=value,
-    #         name=name,
-    #         descid=str(descid),
-    #         action='markup'
-    #     )
+    def markup(
+        self,
+        value,
+        name
+    ):
+        markup_type = '2' if value.endswith('%') else '4'
 
-    #     self.send_command(cmd, check_for_errors=True)
+        self.send_command(
+            command='$n',
+            parameters=[markup_type],
+            texts=[
+                name,
+                '\r',
+                value.strip('%'),
+                '/'
+            ],
+            check_for_errors=True
+        )
 
     # def payment_add(
     #     self,
@@ -326,11 +339,43 @@ class Printer:
 
     def receipt_begin(
         self,
-        lines_count=0 # 0 - online
+        lines_count=0, # 0 - online
+        system_identifier='',
+        additional_lines=tuple(),
+        buyer_identifier='',
+        buyer_identifier_type='NIP'
     ):
+
+        if system_identifier:
+            additional_lines = [
+                system_identifier
+            ] + list(additional_lines)
+
+        params = [
+            str(lines_count),
+            ';', 
+            str(len(additional_lines))
+        ]
+
+        texts = [line + '\r' for line in additional_lines]
+
+        if buyer_identifier:
+            params += [
+                ';0;',
+                BUYER_IDENTIFIER[buyer_identifier_type],
+                ';',
+                '1'
+            ]
+
+            texts += [
+                buyer_identifier,
+                '\r'
+            ]
+
         self.send_command(
             command='$h',
-            parameters=[str(lines_count)],
+            parameters=params,
+            texts=texts,
             check_for_errors=True
         )
 
@@ -344,18 +389,20 @@ class Printer:
     def receipt_close(
         self,
         total,        
-        cashier
-    ):        
+        cashier,
+        discount=0,
+        cash=0
+    ):                
         self.send_command(
             command='$e',
-            parameters=['1;0'],
+            parameters=['1;', str(discount)],
             texts=[
                 cashier,
                 '\r',
-                nmb(total),
+                nmb(cash),
                 '/',
                 nmb(total),
-                '/',
+                '/'
             ],
             check_for_errors=True
         )

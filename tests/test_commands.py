@@ -126,7 +126,14 @@ def test_cash_register_data(printer):
 def test_multiple_position_receipt_with_discount(printer):
     printer.set_error('silent')
     printer.receipt_cancel()
-    printer.receipt_begin()
+    printer.receipt_begin(
+        buyer_identifier='6220006775',
+        system_identifier='1/10/2020',
+        additional_lines=[            
+            'Second line',
+            'Third line'
+        ]
+    )
     printer.item(
         lineno=1,
         name='Test next',
@@ -142,51 +149,50 @@ def test_multiple_position_receipt_with_discount(printer):
         ptu='A',
         price=2
     )
-    # printer.discount(
-    #     value='20%',
-    #     name='Employee',
-    #     descid=7
-    # )
+    printer.discount(
+        value='20%',
+        name='Employee discount'
+    )
     printer.receipt_close(
-        16.0, #12.8,
-        # '2/TEST/2020',
-        # '10',
-        'John Doe'
+        16.0,
+        'John Doe',
+        discount=20,
+        cash=20.00
     )
 
-# @pytest.mark.paper
-# def test_multiple_item_receipt_with_item_discount(printer):
-#     printer.receipt_begin()
-#     printer.item(
-#         name='Test discount',
-#         quantity=2,
-#         quantityunit='pcs',
-#         ptu='A',
-#         price=4,
-#         discount_name='Promotion',
-#         discount_value='10%',
-#         discount_descid=1
-#     )
-#     printer.item(
-#         name='Test zażółć gęślą jaźń 2',
-#         quantity=4,
-#         quantityunit='pcs',
-#         description='A long description',
-#         ptu='A',
-#         price=2
-#     )
-#     printer.discount(
-#         value='20%',
-#         name='Employee',
-#         descid=7
-#     )
-#     printer.receipt_close(
-#         12.16,
-#         '2/TEST/2020',
-#         '10',
-#         'John Doe',
-#         nip='6220006775'
-#     )
+@pytest.mark.paper
+def test_multiple_item_receipt_with_item_discount(printer):
+    printer.receipt_begin()
+    printer.item(
+        name='Test discount',
+        quantity=2,
+        quantityunit='pcs',
+        ptu='A',
+        price=4,
+        discount_name='Promotion',
+        discount_value='10%',
+        discount_descid=1
+    )
+    printer.item(
+        name='Test zażółć gęślą jaźń 2',
+        quantity=4,
+        quantityunit='pcs',
+        description='A long description',
+        ptu='A',
+        price=2
+    )
+    printer.discount(
+        value='20%',
+        name='Employee',
+        descid=7
+    )
+    printer.receipt_close(
+        12.16,
+        '2/TEST/2020',
+        '10',
+        'John Doe',
+        nip='6220006775'
+    )
 
 # @pytest.mark.paper
 # def test_multiple_item_receipt_with_item_discount_and_payment(printer):
