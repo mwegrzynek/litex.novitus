@@ -18,18 +18,19 @@ log.setLevel(logging.DEBUG)
 
 
 ERROR_HANDLING = {
-    'display': b'0',
-    'silent': b'1'
+    'display': '0',
+    'silent': '1',
+    'autowithdisplay': '2',
+    'autowithoutdisplay': '3'
 }
 
 
 class Printer:
 
-    def __init__(self, url, timeout=10, encoding='cp1250', crc=False):
+    def __init__(self, url, timeout=10, encoding='cp1250'):
         self.url = url
         self.timeout = timeout
         self.encoding = encoding
-        self.crc = crc
         self._conn = None
 
     @property
@@ -44,12 +45,6 @@ class Printer:
         if self._conn is not None:
             self._conn.close()
             self._conn = None
-
-    def _ps(self, val, sep=''):
-        '''
-        Converts val to printer compatible string
-        '''
-        return (str(val) + sep).encode(self.encoding) 
 
     def send_command(
         self,
@@ -76,7 +71,6 @@ class Printer:
 
         if check_for_errors:
             time.sleep(0.1)
-            #if self.enq()['lastcommanderror'] == 'yes':
             err = self.get_error()
             if err != 0:
                 raise ProtocolError(err)
@@ -84,7 +78,7 @@ class Printer:
         return reply
 
     def dle(self):
-        self.conn.write(bytes([0x10]))
+        self.conn.write(b'\x10')
         status = unpack_flags(self.conn.read())[:3]
         return {
             'online': yn(status[2]),
@@ -93,7 +87,7 @@ class Printer:
         }
 
     def enq(self):
-        self.conn.write(bytes([0x5]))
+        self.conn.write(b'\x05')
         status = unpack_flags(self.conn.read())[:4]
         return {
             'fiscal': yn(status[3]),
@@ -103,21 +97,21 @@ class Printer:
         }
 
     def bel(self):
-        self.conn.write(bytes([0x7]))
+        self.conn.write(b'\x07')
 
     def can(self):
-        self.conn.write(bytes([0x18]))
+        self.conn.write(b'\x18')
 
     def set_error(self, value):
 
         self.send_command(
-            command=b'#e',
-            parameters=(ERROR_HANDLING[value],)
+            command='#e',
+            parameters=[ERROR_HANDLING[value]]
         )
 
     def get_error(self):
         reply = self.send_command(
-            command=b'#n',
+            command='#n',
             read_reply=True
         )[5:-2]
 
@@ -125,8 +119,8 @@ class Printer:
 
     def cash_register_data(self, mode=21):
         reply = self.send_command(
-            command=b'#s',
-            parameters=(self._ps(mode),),
+            command='#s',
+            parameters=[str(mode)],
             read_reply=True
         )[2:-2]
 
@@ -237,38 +231,42 @@ class Printer:
         discount_value=None,
         discount_descid=16
     ):
-        params = [self._ps(lineno)]
-        texts = [name + '\r']
+        params = [str(lineno)]
+        texts = [name, '\r']
 
         if plu:
-            texts.append(plu + '\r')
+            texts += [plu, '\r']
 
-        texts.extend([
-            nmb(quantity) + '\r',
-            ptu + '/',
-            nmb(price) + '/',
-            nmb(price * quantity) + '/',
-        ])
+        texts += [
+            nmb(quantity),
+            '\r',
+            ptu,
+            '/',
+            nmb(price),
+            '/',
+            nmb(price * quantity),
+            '/'
+        ]
 
         if discount_value is not None:
-            params.extend([
-                b'2', b';', self._ps(discount_descid)
-            ])
+            params += [
+                '2;', 
+                str(discount_descid)
+            ]
 
-            texts.append([
-                discount_value.strip('%') + '\r',
-                discount_name + '\r'
-            ])
+            texts += [
+                discount_value.strip('%'),
+                '\r',
+                discount_name,
+                '\r'
+            ]
 
         if description:
-            params.extend([
-                b'1;'
-            ])
-
-            texts.append(description + '\r')            
+            params.append('1;')
+            texts += [description, '\r']
         
         self.send_command(
-            command=b'$l',
+            command='$l',
             parameters=params,
             texts=texts,
             check_for_errors=True
@@ -328,19 +326,18 @@ class Printer:
 
     def receipt_begin(
         self,
-        mode='online',
-        pharmaceutical='no'
+        lines_count=0 # 0 - online
     ):
         self.send_command(
-            command=b'$h',
-            parameters=(b'0',),
+            command='$h',
+            parameters=[str(lines_count)],
             check_for_errors=True
         )
 
     def receipt_cancel(self):    
         self.send_command(
-            command=b'$e',
-            parameters=[b'0'],
+            command='$e',
+            parameters=['0'],
             check_for_errors=True
         )
 
@@ -350,20 +347,23 @@ class Printer:
         cashier
     ):        
         self.send_command(
-            command=b'$e',
-            parameters=[b'1;0'],
+            command='$e',
+            parameters=['1;0'],
             texts=[
-                cashier + '\r',
-                nmb(total) + '/',
-                nmb(total) + '/',
+                cashier,
+                '\r',
+                nmb(total),
+                '/',
+                nmb(total),
+                '/',
             ],
             check_for_errors=True
         )
 
     def open_drawer(self):
         self.send_command(
-            command=b'$d',
-            parameters=(b'1',)
+            command='$d',
+            parameters=['1']
         )
 
     # def info_checkout(self, type_='receipt'):

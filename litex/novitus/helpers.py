@@ -20,7 +20,7 @@ def checksum(txt: str) -> str:
     for el in txt:
         chk ^= el
 
-    return ('{:02x}'.format(chk)).upper().encode('UTF-8')
+    return ('{:02x}'.format(chk)).upper().encode('cp1250')
 
 
 def unpack_flags(flags: bytes) -> list:
@@ -33,11 +33,11 @@ def assemble_packet(
         texts=tuple(),
         encoding='cp1250'
     ):
-        pkt = b''.join(parameters)
-        pkt += command
+        txt = ''.join(parameters)
+        txt += command
+        txt += ''.join(texts)
 
-        for txt in texts:
-            pkt += txt.encode(encoding)
+        pkt = txt.encode(encoding)
 
         return b'\x1bP' + pkt + checksum(pkt) + b'\x1b\\'
 
