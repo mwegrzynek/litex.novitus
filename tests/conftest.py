@@ -8,4 +8,6 @@ from pytest import fixture
 def printer():
     from litex.novitus import Printer
 
-    return Printer(os.environ['NOVITUS_URL'])
+    return Printer(
+        os.environ.get('NOVITUS_URL', 'hwgrep://.*Novitus.*')
+    )

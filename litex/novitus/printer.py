@@ -257,19 +257,21 @@ class Printer:
 
         if discount_value is not None:
             params += [
-                '2;', 
+                ';', 
                 str(discount_descid)
             ]
 
             texts += [
                 discount_value.strip('%'),
-                '\r',
+                '/',
                 discount_name,
                 '\r'
             ]
 
         if description:
-            params.append('1;')
+            if discount_value is None:
+                params.append(';0')                
+            params.append(';1')
             texts += [description, '\r']
         
         self.send_command(
@@ -395,13 +397,15 @@ class Printer:
     ):                
         self.send_command(
             command='$e',
-            parameters=['1;', str(discount)],
+            parameters=['1;0;0;1;1;1',],
             texts=[
                 cashier,
                 '\r',
                 nmb(cash),
                 '/',
                 nmb(total),
+                '/',
+                nmb(discount),
                 '/'
             ],
             check_for_errors=True
