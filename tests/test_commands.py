@@ -77,7 +77,7 @@ def test_single_position_invoice(printer):
 
     printer.invoice_begin(
         no_of_lines=1,
-        customer= (
+        customer=(
             'Litex Service Sp. z o.o.\n'
             'ul. Staroprzygodzka 117\n'
             '63-400 Ostrów Wielkopolski\n'
@@ -99,50 +99,51 @@ def test_single_position_invoice(printer):
         seller='Jane Doe'
     )
 
-# @pytest.mark.paper
-# def test_multiple_position_invoice_with_discount(printer):
-#     printer.invoice_begin(
-#         invoice_type='invoice',
-#         copies=-1,
-#         description='original',
-#         customer='Litex Service Sp. z o.o.',
-#         nip='PL6220006775',
-#         options=set([3, 4, 5, 6]),
-#         customernameoptions='info',
-#         sellernameoptions='none',
-#         signarea='no'
-#     )
-#     printer.item(
-#         name='Test ąśćłóśź',
-#         quantity=10,
-#         quantityunit='pcs',
-#         ptu='A',
-#         price=10
-#     )
-#     printer.item(
-#         name='Test zażółć gęślą jaźń',
-#         quantity=15,
-#         quantityunit='pcs',
-#         description='A long description',
-#         ptu='A',
-#         price=5def test_taxrates_get(printer):
-#     res = printer.taxrates_get()
-#     assert res[0] == ('A', '23.00%')
-#     assert res[1] == ('B', '8.00%')
-#     assert res[4] == ('E', 'free')
-#     )
-#     printer.discount(
-#         value='10%',
-#         name='Seasonal',
-#         descid=12
-#     )
-#     printer.invoice_close(
-#         157.5,
-#         '@1/TEST/2020',
-#         '10',
-#         'John Doe',
-#         'Jane Doe'
-#     )
+@pytest.mark.paper
+def test_multiple_position_invoice_with_discount(printer):
+    printer.set_error('silent')
+    printer.invoice_cancel()
+
+    printer.invoice_begin(
+        no_of_lines=2,
+        number='FV 2/2020',
+        invoice_type='invoice',        
+        customer=(
+            'Litex Service Sp. z o.o.\n'
+            'ul. Staroprzygodzka 117\n'
+            '63-400 Ostrów Wielkopolski\n'
+            'Poland'
+        ),
+        nip='PL6220006775'        
+    )
+    printer.item(
+        lineno=1,
+        name='Test ąśćłóśź',
+        quantity=10,
+        ptu='A',
+        price=10,
+        discount_name='Promotion',
+        discount_value='10%',
+        discount_descid=2
+    )
+    printer.item(
+        lineno=2,
+        name='Test zażółć gęślą jaźń',
+        quantity=15,        
+        description='A long description',
+        ptu='A',
+        price=5
+    )
+    # printer.discount(
+    #     value='10%',
+    #     name='Seasonal'
+    # )
+    printer.invoice_close(
+        165.0,
+        #discount=10,  
+        buyer='John Doe',
+        seller='Jane Doe'
+    )
 
 
 @pytest.mark.paper
