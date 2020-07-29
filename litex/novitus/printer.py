@@ -158,86 +158,139 @@ class Printer:
 
         return tax_rates
 
-    # def invoice_begin(self, **kwargs):
+    def invoice_begin(
+        self,
+        no_of_lines,        
+        customer,
+        nip,
+        number,
+        invoice_type='invoice',
+        signarea=True,
+        copies=0,
+        payment_date=None,
+        margins=True,
+        recipient=None,
+        issuer=None
+    ):
+        customer_lines = customer.split('\n')
 
-    #     defined_args = dict(
-    #         invoice_type=('invoice', 'pharmacy'),
-    #         number=None,
-    #         nip=None,
-    #         description=('both', 'original'),
-    #         paymentname=None,
-    #         paymentdate=None,
-    #         recipient=None,
-    #         issuer=None,
-    #         copies=None,
-    #         margins=('yes', 'no'),
-    #         signarea=('yes', 'no'),
-    #         customernameoptions=('info', 'all', 'none'),
-    #         sellernameoptions=('info', 'all', 'none'),
-    #         paidlabel=None,
-    #         selldate=None,
-    #         buyerlabel=None,
-    #         additionalinfo=None
-    #     )
+        params = [
+            str(no_of_lines), # invoice lines number
+            ';',
+            str(len(customer_lines)), # customer lines number
+            ';',
+            '1' if invoice_type == 'invoice' else '2',
+            ';',
+            '2', # Oryginał / kopia
+            ';',
+            '1' if margins else '0', # upper margin
+            ';',
+            '0', # ignored
+            ';',
+            '255' if copies == 0 else str(copies - 1),
+            ';',
+            '0', # ignored
+            ';',
+            '0', # ignored
+            ';',
+            '0' if signarea else '1',
+            ';',
+            '0' # no country symbol before sellers NIP
+        ]
 
-    #     cmd = E.invoice()
+        texts = [
+            number,
+            '\r',            
+        ]
 
-    #     cmd.set('action', 'begin')
+        for cl in customer_lines:
+            texts += [
+                cl,
+                '\r'
+            ]
 
-    #     # Prepare options
-    #     options = set(kwargs.pop('options', []))
-    #     if options:
-    #         for op in options:
-    #             if op in range(1, 20):
-    #                 op_tag = cmd.append(E.option('', id=str(op)))
+        texts += [
+            nip,
+            '\r', 
+            '\r', # payment date
+            '\r'  # payment form
+        ]
 
-    #     # Prepare customer info
-    #     customer = kwargs.pop('customer', None)
-    #     if customer:
-    #         cust_tag = cmd.append(E.customer(customer))
+        if payment_date is not None:
+            texts += [
+                payment_date,
+                '\r'
+            ]
 
-    #     args = {}
-    #     for name, value in kwargs.items():
-    #         if name not in defined_args:
-    #             raise TypeError('Unknown argument: {}'.format(name))
+        if recipient is not None:
+            texts += [
+                recipient,
+                '\r'
+            ]
 
-    #         allowed_values = defined_args.get(name)
-    #         if allowed_values is not None and value not in allowed_values:
-    #             raise TypeError(
-    #                 'Argument {} has wrong value: {} (not in {})'.format(
-    #                     name,
-    #                     value,
-    #                     allowed_values
-    #                 )
-    #             )
+        if issuer is not None:
+            texts += [
+                issuer,
+                '\r'
+            ]
 
-    #         if value is not None:
-    #             cmd.set(name, str(value))
+        texts += [
+            '#',
+            number,
+            '\r',
+            customer_lines[0],
+            '\r'
+        ]        
 
-    #     self.send_command(cmd, check_for_errors=True)
+        self.send_command(
+            command='$h',
+            parameters=params,
+            texts=texts,
+            check_for_errors=True
+        )
 
-    # def invoice_cancel(self):
-    #     cmd = E.invoice('', action='cancel')
-    #     self.send_command(cmd, check_for_errors=True)
+    def invoice_cancel(self):    
+        self.send_command(
+            command='$e',
+            parameters=['0'],
+            check_for_errors=True
+        )
 
-    # def invoice_close(
-    #     self,
-    #     total,
-    #     systemno,
-    #     checkout,
-    #     cashier,
-    #     buyer
-    # ):
-    #     cmd = E.invoice(
-    #         '',
-    #         action='close',
-    #         total=str(total),
-    #         systemno=systemno,
-    #         checkout=checkout,
-    #         cashier=cashier,
-    #         buyer=buyer
-    #     )
-    #     self.send_command(cmd, check_for_errors=True)
+    def invoice_close(
+        self,
+        total,        
+        discount=0,
+        cash=0,
+        paid_line='',
+        buyer='',
+        seller=''
+    ):                
+        self.send_command(
+            command='$e',
+            parameters=[
+                '1;0;0;1;1;1;',
+                '1' if paid_line else '0',
+                ';',
+                '0', # buyer name options
+                ';',
+                '0'  # seler name options
+            ],
+            texts=[
+                paid_line,
+                '\r',
+                buyer,
+                '\r',
+                seller,
+                '\r',                
+                nmb(cash),
+                '/',
+                nmb(total),
+                '/',
+                nmb(discount),
+                '/'
+            ],
+            check_for_errors=True
+        )
 
     def item(
         self,
@@ -287,7 +340,7 @@ class Printer:
         if description:
             if discount_value is None:
                 params.append(';0;0')                
-                
+
             params.append(';1')
             texts += [description, '\r']
         
@@ -401,12 +454,7 @@ class Printer:
             check_for_errors=True
         )
 
-    def receipt_cancel(self):    
-        self.send_command(
-            command='$e',
-            parameters=['0'],
-            check_for_errors=True
-        )
+    receipt_cancel = invoice_cancel
 
     def receipt_close(
         self,
@@ -436,21 +484,5 @@ class Printer:
             command='$d',
             parameters=['1']
         )
-
-    # def info_checkout(self, type_='receipt'):
-
-    #     cmd = E.info(
-    #         '',
-    #         action='checkout',
-    #         type=type_,
-    #         isfiscal='?',
-    #         lasterror='?'
-    #     )
-
-    #     return self.send_command(
-    #         cmd,
-    #         read_reply=True,
-    #     ).info
-
 
 

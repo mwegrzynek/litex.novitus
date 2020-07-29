@@ -33,48 +33,71 @@ def test_cash_register_data(printer):
     assert 'serialno' in res
 
 
-# def test_invoice_begin_cancel(printer):
+def test_invoice_begin_cancel(printer):
 
-#     printer.invoice_begin(
-#         invoice_type='invoice',
-#         number='1/TEST/2020',
-#         nip='6220006775'
-#     )
+    printer.invoice_begin(
+        no_of_lines=1,
+        customer='Litex Service Sp. z o.o.',
+        invoice_type='invoice',
+        number='1/TEST/2020',
+        nip='6220006775'
+    )
 
-#     printer.invoice_cancel()
-
-
-# def test_invoice_cancel_with_no_active_invoice(printer):
-#     # Works even without open transaction
-#     printer.invoice_cancel()
+    printer.invoice_cancel()
 
 
-# def test_double_invoice_begin(printer):
-#     printer.invoice_begin(invoice_type='invoice')
-
-#     with pytest.raises(ProtocolError):
-#         printer.invoice_begin(invoice_type='invoice')
-
-#     printer.invoice_cancel()
+def test_invoice_cancel_with_no_active_invoice(printer):
+    # Works even without open transaction
+    printer.invoice_cancel()
 
 
-# @pytest.mark.paper
-# def test_single_position_invoice(printer):
-#     printer.invoice_begin(invoice_type='invoice', copies=-1)
-#     printer.item(
-#         name='Test ąśćłóśź',
-#         quantity=10,
-#         quantityunit='pcs',
-#         ptu='A',
-#         price=10
-#     )
-#     printer.invoice_close(
-#         100,
-#         '@1/TEST/2020',
-#         '10',
-#         'John Doe',
-#         'Jane Doe'
-#     )
+def test_double_invoice_begin(printer):
+    printer.invoice_begin(
+        no_of_lines=1,
+        customer='Litex Service Sp. z o.o.',
+        nip='6220006775',
+        number='FAILED/1/2020'
+    )
+
+    with pytest.raises(ProtocolError):
+        printer.invoice_begin(
+            no_of_lines=1,
+            customer='Litex Service Sp. z o.o.',
+            nip='6220006775',
+            number='FAILED/2/2020'
+        )
+
+    printer.invoice_cancel()
+
+
+@pytest.mark.paper
+def test_single_position_invoice(printer):
+    printer.set_error('silent')
+    printer.invoice_cancel()
+
+    printer.invoice_begin(
+        no_of_lines=1,
+        customer= (
+            'Litex Service Sp. z o.o.\n'
+            'ul. Staroprzygodzka 117\n'
+            '63-400 Ostrów Wielkopolski\n'
+            'Poland'
+        ),
+        nip='6220006775',
+        number='FV 1/2020'
+    )
+    printer.item(
+        lineno=1,
+        name='Test ąśćłóśź',
+        quantity=10,
+        ptu='A',
+        price=10
+    )
+    printer.invoice_close(
+        100,  
+        buyer='John Doe',
+        seller='Jane Doe'
+    )
 
 # @pytest.mark.paper
 # def test_multiple_position_invoice_with_discount(printer):
@@ -244,14 +267,6 @@ def test_multiple_item_receipt_with_item_discount_and_payment(printer):
 
 def test_open_drawer(printer):
     printer.open_drawer()
-
-
-# def test_info_checkout(printer):
-#     res = printer.info_checkout()
-#     assert res.get('isfiscal') == 'yes'
-#     assert res.get('lasterror') == '0'
-#     assert res.ptu.get('name') == 'A'
-#     assert res.ptu.text
 
 
 def test_taxrates_get(printer):
