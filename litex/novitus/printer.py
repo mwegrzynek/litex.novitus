@@ -31,6 +31,20 @@ BUYER_IDENTIFIER = {
     'PESEL': '3'
 }
 
+PAYMENT_TYPES = {
+    'cash': '0',
+    'card': '1',
+    'cheque': '2',
+    'bon': '3',
+    'other': '4',
+    'credit': '5',
+    'account': '6',
+    'foreign': '7',
+    'transfer': '8',
+    'mobile': '9',
+    'voucher': '10'
+}
+
 
 class Printer:
 
@@ -257,6 +271,8 @@ class Printer:
 
         if discount_value is not None:
             params += [
+                ';',
+                '2' if discount_value.endswith('%') else '1',
                 ';', 
                 str(discount_descid)
             ]
@@ -270,7 +286,8 @@ class Printer:
 
         if description:
             if discount_value is None:
-                params.append(';0')                
+                params.append(';0;0')                
+                
             params.append(';1')
             texts += [description, '\r']
         
@@ -319,25 +336,28 @@ class Printer:
             check_for_errors=True
         )
 
-    # def payment_add(
-    #     self,
-    #     type_,
-    #     value,
-    #     rate=1,
-    #     mode='payment',
-    #     name=''
-    # ):
-    #     cmd = E.payment(
-    #         '',
-    #         action='add',
-    #         type=type_,
-    #         value=str(value),
-    #         rate=str(rate),
-    #         mode=mode,
-    #         name=name
-    #     )
-
-    #     self.send_command(cmd, check_for_errors=True)
+    def payment_add(
+        self,
+        type_,
+        value,
+        mode='payment',
+        name=''
+    ):
+        self.send_command(
+            command='$b',
+            parameters=[
+                '1' if mode == 'payment' else '2',
+                ';',
+                PAYMENT_TYPES.get(type_, '4'), # set other, when nothing matches
+            ],
+            texts=[
+                nmb(value),
+                '/',
+                name,
+                '\r'
+            ],
+            check_for_errors=True
+        )
 
     def receipt_begin(
         self,

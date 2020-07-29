@@ -193,50 +193,53 @@ def test_multiple_item_receipt_with_item_discount(printer):
     printer.receipt_close(
         15.20,        
         'John Doe',
-        discount=20.0
+        discount=20.0,
+        cash=50.0
     )
 
-# @pytest.mark.paper
-# def test_multiple_item_receipt_with_item_discount_and_payment(printer):
-#     printer.receipt_begin()
-#     printer.item(
-#         name='Test discount',
-#         quantity=2,
-#         quantityunit='pcs',
-#         ptu='A',
-#         price=4,
-#         discount_name='Promotion',
-#         discount_value='10%',
-#         discount_descid=1
-#     )
-#     printer.item(
-#         name='Test zażółć gęślą jaźń 2',
-#         quantity=4,
-#         quantityunit='pcs',
-#         description='A long description',
-#         ptu='A',
-#         price=2
-#     )
-#     printer.discount(
-#         value='20%',
-#         name='Employee',
-#         descid=7
-#     )
-#     printer.payment_add(
-#         'card',
-#         value=11.0
-#     )
-#     printer.payment_add(
-#         'cash',
-#         value=1.16
-#     )
-#     printer.receipt_close(
-#         12.16,
-#         '2/TEST/2020',
-#         '10',
-#         'John Doe',
-#         nip='6220006775'
-#     )
+@pytest.mark.paper
+def test_multiple_item_receipt_with_item_discount_and_payment(printer):
+    printer.set_error('silent')
+    printer.receipt_cancel()
+
+    printer.receipt_begin(
+        system_identifier='3/TEST/2020',  
+    )
+    printer.item(
+        lineno=1,
+        name='Test discount',
+        quantity=2,
+        ptu='A',
+        price=4,
+        discount_name='Promotion',
+        discount_value='10%',
+        discount_descid=2
+    )
+    printer.item(
+        lineno=2,
+        name='Test zażółć gęślą jaźń 2',
+        quantity=4,        
+        description='A long description',
+        ptu='A',
+        price=2
+    )
+    printer.discount(
+        value='20%',
+        name='Employee'
+    )
+    printer.payment_add(
+        'card',
+        value=11.0
+    )
+    printer.payment_add(
+        'cash',
+        value=1.16
+    )
+    printer.receipt_close(
+        15.20,        
+        'John Doe',
+        discount=20
+    )
 
 
 def test_open_drawer(printer):
