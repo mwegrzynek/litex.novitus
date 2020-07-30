@@ -258,7 +258,8 @@ class Printer:
 
     def invoice_close(
         self,
-        total,        
+        total, 
+        number,       
         discount=0,
         cash=0,
         paid_line='',
@@ -282,11 +283,13 @@ class Printer:
                 ';',
                 '1' if paid_line else '0',
                 ';',
-                '1', # buyer name options
+                '1' if buyer else '2',
                 ';',
-                '1'  # seler name options
+                '1' if seller else '2'
             ],
             texts=[
+                number,
+                '\r',
                 paid_line,
                 '\r',
                 buyer,

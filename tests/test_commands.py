@@ -140,8 +140,9 @@ def test_multiple_position_invoice_with_discount(printer):
     )
     printer.invoice_close(
         165.0,
+        number='FV 2/2020',
         discount=10,  
-        buyer='John Doe',
+        #buyer='John Doe',
         seller='Jane Doe'
     )
 
