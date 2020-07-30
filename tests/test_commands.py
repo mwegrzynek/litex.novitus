@@ -87,7 +87,7 @@ def test_single_position_invoice(printer):
         number='FV 1/2020'
     )
     printer.item(
-        lineno=1,
+        line_no=1,
         name='Test ąśćłóśź',
         quantity=10,
         ptu='A',
@@ -95,6 +95,7 @@ def test_single_position_invoice(printer):
     )
     printer.invoice_close(
         100,  
+        number='FV 1/2020',
         buyer='John Doe',
         seller='Jane Doe'
     )
@@ -117,7 +118,7 @@ def test_multiple_position_invoice_with_discount(printer):
         nip='PL6220006775'        
     )
     printer.item(
-        lineno=1,
+        line_no=1,
         name='Test ąśćłóśź',
         quantity=10,
         ptu='A',
@@ -127,7 +128,7 @@ def test_multiple_position_invoice_with_discount(printer):
         discount_descid=2
     )
     printer.item(
-        lineno=2,
+        line_no=2,
         name='Test zażółć gęślą jaźń',
         quantity=15,        
         description='A long description',
@@ -142,7 +143,7 @@ def test_multiple_position_invoice_with_discount(printer):
         165.0,
         number='FV 2/2020',
         discount=10,  
-        #buyer='John Doe',
+        buyer='John Doe',
         seller='Jane Doe'
     )
 
@@ -160,14 +161,14 @@ def test_multiple_position_receipt_with_discount(printer):
         ]
     )
     printer.item(
-        lineno=1,
+        line_no=1,
         name='Test next',
         quantity=2,        
         ptu='A',
         price=4
     )
     printer.item(
-        lineno=2,
+        line_no=2,
         name='Test zażółć gęślą jaźń 2',
         quantity=4,        
         description='A long description',
@@ -194,7 +195,7 @@ def test_multiple_item_receipt_with_item_discount(printer):
         system_identifier='2/TEST/2020',  
     )
     printer.item(
-        lineno=1,
+        line_no=1,
         name='Test discount',
         quantity=2,
         ptu='A',
@@ -204,7 +205,7 @@ def test_multiple_item_receipt_with_item_discount(printer):
         discount_descid=2
     )
     printer.item(
-        lineno=2,
+        line_no=2,
         name='Test zażółć gęślą jaźń 2',
         quantity=4,
         description='A long description',
@@ -231,7 +232,7 @@ def test_multiple_item_receipt_with_item_discount_and_payment(printer):
         system_identifier='3/TEST/2020',  
     )
     printer.item(
-        lineno=1,
+        line_no=1,
         name='Test discount',
         quantity=2,
         ptu='A',
@@ -241,7 +242,7 @@ def test_multiple_item_receipt_with_item_discount_and_payment(printer):
         discount_descid=2
     )
     printer.item(
-        lineno=2,
+        line_no=2,
         name='Test zażółć gęślą jaźń 2',
         quantity=4,        
         description='A long description',

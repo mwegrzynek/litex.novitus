@@ -300,7 +300,7 @@ class Printer:
                 '/',
                 nmb(total),
                 '/',
-                #nmb(discount),
+                '0', # discount
                 '/'
             ],
             check_for_errors=True
@@ -308,7 +308,7 @@ class Printer:
 
     def item(
         self,
-        lineno,    
+        line_no,    
         name,
         quantity,        
         ptu,
@@ -319,7 +319,7 @@ class Printer:
         discount_value=None,
         discount_descid=16
     ):
-        params = [str(lineno)]
+        params = [str(line_no)]
         texts = [name, '\r']
 
         if plu:
