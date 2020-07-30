@@ -268,12 +268,23 @@ class Printer:
         self.send_command(
             command='$e',
             parameters=[
-                '1;0;0;1;1;1;',
+                '1', # action - 1 commit
+                ';',
+                str(round(discount, 2)), #'0' discount percentage - ignored
+                ';',
+                '0', # additional lines count
+                ';',
+                '1', # how to end transaction - ignored
+                ';',
+                '0', # discount type: 0 - none, 1 - precentage discount, 2 - percentage markup
+                ';',
+                '1', # constant
+                ';',
                 '1' if paid_line else '0',
                 ';',
-                '0', # buyer name options
+                '1', # buyer name options
                 ';',
-                '0'  # seler name options
+                '1'  # seler name options
             ],
             texts=[
                 paid_line,
@@ -286,7 +297,7 @@ class Printer:
                 '/',
                 nmb(total),
                 '/',
-                nmb(discount),
+                #nmb(discount),
                 '/'
             ],
             check_for_errors=True

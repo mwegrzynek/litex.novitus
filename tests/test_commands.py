@@ -134,10 +134,10 @@ def test_multiple_position_invoice_with_discount(printer):
         ptu='A',
         price=5
     )
-    # printer.discount(
-    #     value='10%',
-    #     name='Seasonal'
-    # )
+    printer.discount(
+        value='10%',
+        name='Seasonal'
+    )
     printer.invoice_close(
         165.0,
         discount=10,  
