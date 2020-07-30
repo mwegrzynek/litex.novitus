@@ -499,4 +499,84 @@ class Printer:
             parameters=['1']
         )
 
+    def non_fiscal_printout_begin(
+        self,
+        printout_no,
+        header_no=0,
+        options=0
+    ):
+        self.send_command(
+            command='$w',
+            parameters=[
+                '0', # constant
+                ';',
+                str(printout_no),
+                ';',
+                str(header_no),
+                ';',
+                str(options)
+            ],
+            check_for_errors=True
+        )
 
+    def non_fiscal_printout_line(
+        self,
+        args,        
+        printout_no,
+        line_no=0,
+        bold=False,
+        inversed=False,
+        font=0,
+        centered=False,
+        font_attributes=0
+    ):
+        self.send_command(
+            command='$w',
+            parameters=[                
+                str(printout_no),
+                ';',
+                str(line_no),
+                ';',
+                '1' if bold else '0',
+                ';',
+                '1' if inversed else '0',
+                ';',
+                str(font),
+                ';',
+                '1' if centered else '0',
+                ';',
+                str(font_attributes)
+            ],
+            texts=[
+                arg + '\r' for arg in args
+            ],
+            check_for_errors=True
+        )
+
+    def non_fiscal_printout_close(
+        self,
+        printout_no,
+        system_no='',  
+        additional_lines=tuple()
+    ):
+        args = list(additional_lines)
+
+        if system_no:
+            args.insert(0, system_no)
+            
+        self.send_command(
+            command='$w',
+            parameters=[
+                '1', # constant
+                ';',
+                str(printout_no),
+                ';',
+                '1' if system_no else '0',
+                ';',
+                str(len(additional_lines))
+            ],
+            texts=[
+                arg + '\r' for arg in args
+            ],
+            check_for_errors=True
+        )

@@ -276,3 +276,47 @@ def test_taxrates_get(printer):
     assert res[0] == ('A', '23.00%')
     assert res[1] == ('B', '8.00%')
     assert res[4] == ('E', 'free')
+
+
+def test_non_fiscal_printout(printer):
+    printer.non_fiscal_printout_close(
+        printout_no=200
+    )
+    
+    printer.non_fiscal_printout_begin(
+        printout_no=200,
+        header_no=1
+    )
+
+    printer.non_fiscal_printout_line(
+        args=[
+            'Weight: 12 500 kg'
+        ],
+        printout_no=200,
+        line_no=1,
+        bold=True,
+        inversed=True,
+        font=0,
+        centered=True,        
+    )
+
+    printer.non_fiscal_printout_line(
+        args=[
+            'https://litexservice.pl'
+        ],
+        printout_no=200,
+        line_no=249,
+    )
+
+    printer.non_fiscal_printout_line(
+        args=[
+            'Zażółć gęślą jaźń'
+        ],
+        printout_no=200,
+        line_no=1,
+        font_attributes=96
+    )
+
+    printer.non_fiscal_printout_close(
+        printout_no=200
+    )
