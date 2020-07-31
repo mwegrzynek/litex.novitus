@@ -9,13 +9,6 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 
-install_requires = filter(
-    lambda req: not req.startswith('-'),
-    open(path.join(this_directory, 'requirements.txt'), 'r')
-    .read()
-    .split('\n')
-)
-
 setup(
     name='litex.novitus',
     version=version,
@@ -28,5 +21,7 @@ setup(
     ],
     include_package_data=True,
     zip_safe=False,
-    install_requires=install_requires
+    install_requires=[
+        'pyserial'
+    ]
 )
