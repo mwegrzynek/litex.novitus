@@ -22,3 +22,4 @@ eggs
 run_debug
 *.db
 .venv
+.tox

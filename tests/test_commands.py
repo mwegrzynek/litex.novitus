@@ -279,6 +279,7 @@ def test_taxrates_get(printer):
     assert res[4] == ('E', 'free')
 
 
+@pytest.mark.paper
 def test_non_fiscal_printout(printer):
     printer.non_fiscal_printout_close(
         printout_no=200
