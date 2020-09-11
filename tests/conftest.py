@@ -9,5 +9,6 @@ def printer():
     from litex.novitus import Printer
 
     return Printer(
-        os.environ.get('NOVITUS_URL', 'hwgrep://.*Novitus.*')
+        os.environ.get('NOVITUS_URL', 'hwgrep://.*Novitus.*'),
+        encoding='cp1250'
     )

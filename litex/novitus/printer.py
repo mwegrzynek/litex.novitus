@@ -3,7 +3,6 @@ Novitus Protocol implementation
 '''
 import logging
 import time
-import enum
 
 
 import serial
@@ -48,7 +47,7 @@ PAYMENT_TYPES = {
 
 class Printer:
 
-    def __init__(self, url, timeout=10, encoding='cp1250'):
+    def __init__(self, url, timeout=10, encoding='mazovia'):
         self.url = url
         self.timeout = timeout
         self.encoding = encoding

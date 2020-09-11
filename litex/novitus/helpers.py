@@ -1,6 +1,7 @@
 import re
 
 
+from . import mazovia
 from .exceptions import ReplyNotImplemented
 
 
@@ -14,13 +15,13 @@ def nmb(val: float) -> str:
     return '{:.2f}'.format(val)
 
 
-def checksum(txt: str) -> str:
+def checksum(txt: str, encoding='mazovia') -> str:
     '''Packet checksum'''
     chk = 255
     for el in txt:
         chk ^= el
 
-    return ('{:02x}'.format(chk)).upper().encode('cp1250')
+    return ('{:02x}'.format(chk)).upper().encode(encoding)
 
 
 def unpack_flags(flags: bytes) -> list:
@@ -31,7 +32,7 @@ def assemble_packet(
         command,
         parameters=tuple(),
         texts=tuple(),
-        encoding='cp1250'
+        encoding='mazovia'
     ):
         txt = ''.join(parameters)
         txt += command
@@ -39,7 +40,7 @@ def assemble_packet(
 
         pkt = txt.encode(encoding)
 
-        return b'\x1bP' + pkt + checksum(pkt) + b'\x1b\\'
+        return b'\x1bP' + pkt + checksum(pkt, encoding) + b'\x1b\\'
 
 
 def parse_cash_register_data_reply(pkt):
@@ -64,7 +65,7 @@ def parse_cash_register_data_reply(pkt):
     return reply
 
 
-def parse_ptu_percentages(val, encoding='cp1250'):
+def parse_ptu_percentages(val, encoding='mazovia'):
     ret = val.lstrip(b'0').decode(encoding) + '%'
 
     if ret == '100.00%':
